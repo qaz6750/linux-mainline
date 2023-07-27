@@ -27,7 +27,7 @@
 #include <linux/debugfs.h>
 #include <linux/of_irq.h>
 #ifdef CONFIG_DRM
-#include <linux/msm_drm_notify.h>
+#include <drm/msm_drm_notify.h>
 #include <linux/notifier.h>
 #endif
 #include <linux/uaccess.h>
