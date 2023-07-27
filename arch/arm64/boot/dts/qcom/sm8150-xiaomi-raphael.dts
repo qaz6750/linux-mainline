@@ -1039,12 +1039,6 @@
 	vdda-pll-supply = <&vreg_l5a_0p875>;
 };
 
-&venus {
-	//status = "okay";
-	firmware-name = "qcom/sm8150/Xiaomi/raphael/venus.mbn";
-	memory-region = <&venus_mem>;
-};
-
 &wcd9340 {
 	reset-gpios = <&tlmm 143 GPIO_ACTIVE_HIGH>;
 	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
