@@ -920,6 +920,10 @@ static int hmdfs_getattr_local(struct mnt_idmap *idmap, const struct path *path,
 	struct path lower_path;
 	int ret;
 
+	if (path->dentry == NULL || hmdfs_d(path->dentry) == NULL) {
+		hmdfs_err("dentry is NULL");
+		return -ENOENT;
+	}
 	hmdfs_get_lower_path(path->dentry, &lower_path);
 	ret = vfs_getattr(&lower_path, stat, request_mask, flags);
 	stat->ino = d_inode(path->dentry)->i_ino;
