@@ -1022,10 +1022,10 @@ static bool hmdfs_has_stash_file(struct dir_context *dctx, const char *name,
 	err = hmdfs_parse_stash_file_name(dctx, name, namelen,
 					   d_type, &stash_inum);
 	if (!err)
-		return 0;
+		return true;
 
 	ctx->tbl->cnt++;
-	return 1;
+	return false;
 }
 
 static bool hmdfs_fill_stash_file(struct dir_context *dctx, const char *name,
@@ -1040,13 +1040,13 @@ static bool hmdfs_fill_stash_file(struct dir_context *dctx, const char *name,
 	err = hmdfs_parse_stash_file_name(dctx, name, namelen,
 					   d_type, &stash_inum);
 	if (!err)
-		return 0;
+		return true;
 	if (ctx->tbl->cnt >= ctx->tbl->max)
-		return 1;
+		return false;
 
 	ctx->tbl->inodes[ctx->tbl->cnt++] = stash_inum;
 
-	return 0;
+	return true;
 }
 
 static int hmdfs_del_stash_file(struct dentry *parent, struct dentry *child)

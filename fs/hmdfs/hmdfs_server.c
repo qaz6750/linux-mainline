@@ -1463,10 +1463,10 @@ static bool hmdfs_filldir_real(struct dir_context *ctx, const char *name,
 
 out:
 	/*
-	 * we always return 0 here, so that the caller can continue to next
+	 * we always return true here, so that the caller can continue to next
 	 * dentry even if failed on this dentry somehow.
 	 */
-	return 0;
+	return true;
 }
 
 static void hmdfs_server_set_header(struct hmdfs_dcache_header *header,

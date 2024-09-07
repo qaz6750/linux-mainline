@@ -183,9 +183,9 @@ static bool hmdfs_name_match(struct dir_context *ctx, const char *name,
 		memcpy(buf->name, name, namelen);
 		buf->name[namelen] = 0;
 		buf->found = true;
-		return 1;
+		return false;
 	}
-	return 0;
+	return true;
 }
 
 static int __lookup_nosensitive(struct path *lower_parent_path,

@@ -1827,25 +1827,25 @@ static bool cache_file_iterate(struct dir_context *ctx, const char *name,
 
 	if (name_len > NAME_MAX) {
 		hmdfs_err("name_len:%d NAME_MAX:%u", name_len, NAME_MAX);
-		return 0;
+		return true;
 	}
 
 	if (d_type != DT_REG)
-		return 0;
+		return true;
 
 	cfi = kmalloc(sizeof(*cfi), GFP_KERNEL);
 	if (!cfi)
-		return -ENOMEM;
+		return false;
 
 	cfi->name = kstrndup(name, name_len, GFP_KERNEL);
 	if (!cfi->name) {
 		kfree(cfi);
-		return -ENOMEM;
+		return false;
 	}
 
 	list_add_tail(&cfi->list, &cb->list);
 
-	return 0;
+	return true;
 }
 
 void hmdfs_do_load(struct hmdfs_sb_info *sbi, const char *fullname, bool server)

@@ -19,12 +19,12 @@ struct hmdfs_iterate_callback_merge {
 	/*
 	 * Record the return value of 'caller->actor':
 	 *
-	 * -EINVAL, buffer is exhausted
-	 * -EINTR, current task is pending
-	 * -EFAULT, something is wrong
-	 * 0, success and can do more
+	 * false, buffer is exhausted
+	 * false, current task is pending
+	 * false, something is wrong
+	 * true, success and can do more
 	 */
-	int result;
+	bool result ;
 	struct rb_root *root;
 	uint64_t dev_id;
 };
@@ -210,7 +210,7 @@ static bool hmdfs_actor_merge(struct dir_context *ctx, const char *name,
 			     int namelen, long long offset, unsigned long long ino,
 			     unsigned int d_type)
 {
-	int ret = 0;
+	bool ret = true;
 	int insert_res = 0;
 	int max_devid_len = 2;
 	char *dentry_name = NULL;
@@ -219,14 +219,20 @@ static bool hmdfs_actor_merge(struct dir_context *ctx, const char *name,
 	struct hmdfs_iterate_callback_merge *iterate_callback_merge = NULL;
 	struct dir_context *org_ctx = NULL;
 
-	if (hmdfs_file_type(name) != HMDFS_TYPE_COMMON)
-		return 0;
+	if (hmdfs_file_type(name) != HMDFS_TYPE_COMMON) {
+		/*
+		* return true here, so that the caller can continue to next
+		* dentry even if failed on this dentry somehow.
+		*/
+		return true;
+	}
+
 
 	if (namelen > NAME_MAX)
-		return -EINVAL;
+		return false;
 	dentry_name = kzalloc(NAME_MAX + 1, GFP_KERNEL);
 	if (!dentry_name)
-		return -ENOMEM;
+		return false;
 
 	strncpy(dentry_name, name, dentry_len);
 
@@ -245,7 +251,7 @@ static bool hmdfs_actor_merge(struct dir_context *ctx, const char *name,
 	} else if (d_type == DT_DIR &&
 		  (insert_res == DT_REG || insert_res == DT_LNK)) {
 		if (strlen(CONFLICTING_DIR_SUFFIX) > NAME_MAX - dentry_len) {
-			ret = -ENAMETOOLONG;
+			ret = false;
 			goto delete;
 		}
 		rename_conflicting_directory(dentry_name, &dentry_len);
@@ -253,7 +259,7 @@ static bool hmdfs_actor_merge(struct dir_context *ctx, const char *name,
 	} else if ((d_type == DT_REG || d_type == DT_LNK) && insert_res > 0) {
 		if (strlen(CONFLICTING_FILE_SUFFIX) + max_devid_len >
 		    NAME_MAX - dentry_len) {
-			ret = -ENAMETOOLONG;
+			ret = false;
 			goto delete;
 		}
 		rename_conflicting_file(dentry_name, &dentry_len,
@@ -268,13 +274,12 @@ static bool hmdfs_actor_merge(struct dir_context *ctx, const char *name,
 	 * different situations.
 	 */
 	iterate_callback_merge->result = ret;
-	ret = ret == 0 ? 0 : 1;
-	if (ret && d_type == DT_DIR && cache_entry->file_type == DT_DIR &&
+	if (!ret && d_type == DT_DIR && cache_entry->file_type == DT_DIR &&
 	   (insert_res == DT_REG || insert_res == DT_LNK))
 		cache_entry->file_type = DT_REG;
 
 delete:
-	if (ret && !insert_res)
+	if (!ret && !insert_res)
 		delete_filename(iterate_callback_merge->root, cache_entry);
 done:
 	kfree(dentry_name);
