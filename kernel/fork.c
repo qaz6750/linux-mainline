@@ -1115,6 +1115,11 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	if (err)
 		goto free_tsk;
 
+#ifdef CONFIG_ACCESS_TOKENID
+	tsk->token = orig->token;
+	tsk->ftoken = 0;
+#endif
+
 	err = alloc_thread_stack_node(tsk, node);
 	if (err)
 		goto free_tsk;
