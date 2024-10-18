@@ -675,6 +675,16 @@
 		flash-max-microamp = <1000000>;
 		flash-max-timeout-us = <1280000>;
 	};
+
+	led-1 {
+		function = LED_FUNCTION_FLASH;
+		color = <LED_COLOR_ID_YELLOW>;
+		led-sources = <2>;
+		led-max-microamp = <200000>;
+		flash-max-microamp = <1000000>;
+		flash-max-timeout-us = <1280000>;
+	};
+
 };
 
 &pon_pwrkey {
