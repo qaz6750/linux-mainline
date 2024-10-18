@@ -1,5 +1,5 @@
 #include "goodix_cfg_bin.h"
-#include <linux/msm_drm_notify.h>
+#include <drm/msm_drm_notify.h>
 
 extern int goodix_i2c_write(struct goodix_ts_device *dev, unsigned int reg, unsigned char *data, unsigned int len);
 extern int goodix_i2c_read(struct goodix_ts_device *dev, unsigned int reg, unsigned char *data, unsigned int len);
