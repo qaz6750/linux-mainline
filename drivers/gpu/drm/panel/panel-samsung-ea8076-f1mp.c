@@ -348,4 +348,4 @@ module_mipi_dsi_driver(samsung_ea8076_f1mp_driver);
 
 MODULE_AUTHOR("degdag-mohamed <degdagmohamed@gmail.com>");
 MODULE_DESCRIPTION("Samsung EA8076 Fhd F1MP Dsi Driver");
-MODULE_LICENSE("GPL")
+MODULE_LICENSE("GPL");
