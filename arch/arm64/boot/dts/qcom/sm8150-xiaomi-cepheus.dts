@@ -13,6 +13,7 @@
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
 #include "sm8150.dtsi"
+#include "sm8150-wcd9340.dtsi"
 #include "pm8150.dtsi"
 #include "pm8150b.dtsi"
 #include "pm8150l.dtsi"
@@ -919,6 +920,26 @@
 	vdda-pll-supply = <&vreg_l5a_0p875>;
 	vdda18-supply = <&vreg_l12a_1p8>;
 	vdda33-supply = <&vreg_l2a_3p1>;
+};
+
+&wcd9340 {
+	reset-gpios = <&tlmm 143 GPIO_ACTIVE_HIGH>;
+	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
+	vdd-buck-supply = <&vreg_s4a_1p8>;
+	vdd-tx-supply = <&vreg_s4a_1p8>;
+	vdd-rx-supply = <&vreg_s4a_1p8>;
+	vdd-io-supply = <&vreg_s4a_1p8>;
+
+	qcom,micbias1-microvolt = <2700000>;
+	qcom,micbias2-microvolt = <1800000>;
+	qcom,micbias3-microvolt = <2700000>;
+	qcom,micbias4-microvolt = <2700000>;
+	
+	//qcom,hphl-jack-type-normally-open;
+	//qcom,ground-jack-type-normally-open;
+	//qcom,mbhc-buttons-vthreshold-microvolt = <75000 150000 237000 500000 500000 500000 500000 500000>;
+	qcom,mbhc-headset-vthreshold-microvolt = <1700000>;
+	qcom,mbhc-headphone-vthreshold-microvolt = <50000>;
 };
 
 &wifi {
