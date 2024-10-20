@@ -174,10 +174,10 @@
 	
 	battery: battery {
 		compatible = "simple-battery";
-		charge-full-design-microamp-hours = <8720000>;
-		energy-full-design-microwatt-hours = <33600000>;
+		charge-full-design-microamp-hours = <3200000>;
+		energy-full-design-microwatt-hours = <12300000>;
 		voltage-min-design-microvolt = <3400000>;
-		voltage-max-design-microvolt = <4480000>;
+		voltage-max-design-microvolt = <4400000>;
 	};
 
 	disp_vci_vreg: disp_vci_vreg {
