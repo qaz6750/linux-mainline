@@ -880,6 +880,10 @@
 &uart13 {
 	status = "okay";
 
+	/delete-property/interrupts;
+	interrupts-extended = <&intc GIC_SPI 585 IRQ_TYPE_LEVEL_HIGH>,
+				<&tlmm 46 IRQ_TYPE_EDGE_FALLING>;
+
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart13_sleep>;
 
