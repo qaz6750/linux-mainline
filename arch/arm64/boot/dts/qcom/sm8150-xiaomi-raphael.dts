@@ -866,19 +866,19 @@
 	gpio-reserved-ranges = <0 4>, <126 4>;
 	
 	quat_mi2s_active: quat-mi2s-active-state {
-			pins = "gpio137", "gpio138";
-			function = "qua_mi2s";
-			drive-strength = <8>;
-			bias-disable;
-			output-high;
-		};
+		pins = "gpio137", "gpio138";
+		function = "qua_mi2s";
+		drive-strength = <8>;
+		bias-disable;
+		output-high;
+	};
 			
 	quat_mi2s_sd0_active: quat-mi2s-sd0-active-state {
-			pins = "gpio139";
-			function = "qua_mi2s";
-			drive-strength = <8>;
-			bias-disable;
-		};
+		pins = "gpio139";
+		function = "qua_mi2s";
+		drive-strength = <8>;
+		bias-disable;
+	};
 		
 	qup_uart13_sleep: qup-uart13-sleep {
 		pinmux {
@@ -906,90 +906,90 @@
 	};
 	
 	sde_dsi_active: sde_dsi_active {
-			pins = "gpio6", "gpio7", "gpio5";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-disable;
+		pins = "gpio6", "gpio7", "gpio5";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
 	};
 	
 	sde_dsi_suspend: sde_dsi_suspend {
-			pins = "gpio6", "gpio7", "gpio5";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-down;
+		pins = "gpio6", "gpio7", "gpio5";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 	
 	sde_te_active: sde_te_active {
-			pins = "gpio8";
-			function = "mdp_vsync";
-			drive-strength = <2>;
-			bias-pull-down;
+		pins = "gpio8";
+		function = "mdp_vsync";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 	
 	sde_te_suspend: sde_te_suspend {
-			pins = "gpio8";
-			function = "mdp_vsync";
-			drive-strength = <2>;
-			bias-pull-down;
+		pins = "gpio8";
+		function = "mdp_vsync";
+		drive-strength = <2>;
+		bias-pull-down;
 	};
 	
 	smartpa_int_active: smartpa_int_active {
-			pins = "gpio141";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-up;
-			input-enable;
+		pins = "gpio141";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+		input-enable;
 	};
 
 	smartpa_int_suspend: smartpa_int_suspend {
-			pins = "gpio141";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-pull-up;
-			input-enable;
+		pins = "gpio141";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+		input-enable;
 	};
 
 	smartpa_enable_active: smartpa_enable_active {
-			pins = "gpio59";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-			bias-pull-down;
-			output-low;
+		pins = "gpio59";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		bias-pull-down;
+		output-low;
 	};
 
 	smartpa_enable_suspend: smartpa_enable_suspend {
-			pins = "gpio59";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-			bias-pull-down;
-			output-low;
+		pins = "gpio59";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		bias-pull-down;
+		output-low;
 	};
 	
 	tp_active: tp_active {
-			pins = "gpio122", "gpio54";
-			function = "gpio";
-			drive-strength = <16>;
-			bias-pull-up;
+		pins = "gpio122", "gpio54";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-pull-up;
 	};
 	
 	tp_int_suspend: tp_int_suspend {
-			pins = "gpio122";
-			function = "gpio";
-			drive-strength = <16>;
-			input-enable;
-			slew-rate = <0>;
-			bias-pull-up = <00>;
+		pins = "gpio122";
+		function = "gpio";
+		drive-strength = <16>;
+		input-enable;
+		slew-rate = <0>;
+		bias-pull-up = <00>;
 	};
 
 	tp_reset_suspend: tp_reset_suspend {
-			pins = "gpio54";
-			function = "gpio";
-			drive-strength = <16>;
-			slew-rate = <1>;
-			bias-disable;
-			output-high;
+		pins = "gpio54";
+		function = "gpio";
+		drive-strength = <16>;
+		slew-rate = <1>;
+		bias-disable;
+		output-high;
 	};
 };
 
@@ -999,6 +999,10 @@
 
 &uart13 {
 	status = "okay";
+
+	/delete-property/interrupts;
+	interrupts-extended = <&intc GIC_SPI 585 IRQ_TYPE_LEVEL_HIGH>,
+				<&tlmm 46 IRQ_TYPE_EDGE_FALLING>;
 
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart13_sleep>;
@@ -1010,7 +1014,6 @@
 		vddrf-supply = <&vreg_l2c_1p3>;
 		vddch0-supply = <&vreg_l11c_3p3>;
 		max-speed = <3200000>;
-		firmware-name = "raphael/crnv21.bin";
 	};
 };
 
