@@ -1014,6 +1014,7 @@
 		vddrf-supply = <&vreg_l2c_1p3>;
 		vddch0-supply = <&vreg_l11c_3p3>;
 		max-speed = <3200000>;
+		firmware-name = "raphael/crnv21.bin";
 	};
 };
 
