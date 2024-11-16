@@ -11,6 +11,7 @@
 #include <dt-bindings/input/gpio-keys.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
 #include "sm8150.dtsi"
 #include "sm8150-wcd9340.dtsi"
@@ -697,16 +698,10 @@
 	status = "okay";
 };
 
-
 &q6afedai {
-	dai@72 {
-		reg = <QUATERNARY_TDM_RX_0>;
-		qcom,tdm-sync-mode = <1>;
-		qcom,tdm-sync-src = <1>;
-		qcom,tdm-data-out = <0>;
-		qcom,tdm-invert-sync = <1>;
-		qcom,tdm-data-delay = <1>;
-		qcom,tdm-data-align = <0>;
+	qi2s@22 {
+		reg = <QUATERNARY_MI2S_RX>;
+		qcom,sd-lines = <0>;
 	};
 };
 
@@ -737,14 +732,16 @@
 };
 
 &sound {
-	compatible = "qcom,sm8150-sndcard";
-	pinctrl-0 = <&quat_tdm_active
-		&quat_tdm_sd1_active>;
+	compatible = "qcom,sdm845-sndcard";
+	pinctrl-0 = <&quat_mi2s_active
+		&quat_mi2s_sd0_active>;
 	pinctrl-names = "default";
 	model = "Xiaomi 9";
 
+	/*
 	audio-routing =
 		"MultiMedia1 Playback", "SPK";
+	*/
 
 	mm1-dai-link {
 		link-name = "MultiMedia1";
@@ -756,7 +753,7 @@
 	speaker-dai-link {
 		link-name = "Speaker Playback";
 		cpu {
-			sound-dai = <&q6afedai QUATERNARY_TDM_RX_0>;
+			sound-dai = <&q6afedai QUATERNARY_MI2S_RX>;
 		};
 
 		platform {
@@ -773,7 +770,7 @@
 	/* gpios 0..3 are NFC spi, gpios 126..129 are FP spi */
 	gpio-reserved-ranges = <0 4>, <126 4>;
 
-	quat_tdm_active: quat-tdm-active-state {
+	quat_mi2s_active: quat-mi2s-active-state {
 		pins = "gpio137", "gpio138";
 		function = "qua_mi2s";
 		drive-strength = <8>;
@@ -781,8 +778,8 @@
 		output-high;
 	};
 
-	quat_tdm_sd1_active: quat-tdm-sd1-active-state {
-		pins = "gpio140";
+	quat_mi2s_sd0_active: quat-mi2s-sd0-active-state {
+		pins = "gpio139";
 		function = "qua_mi2s";
 		drive-strength = <8>;
 		bias-disable;
