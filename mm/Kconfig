@@ -471,6 +471,41 @@ config SPARSEMEM_MANUAL
 
 endchoice
 
+config MEMORY_MONITOR
+	bool "ENABLE MEMORY_MONITOR"
+	depends on PROC_FS
+	default n
+	help
+		MEMORY_MONITOR is a monitor of some memory reclaim method.
+		Now, kswapd wake up monitor use it.
+
+config HYPERHOLD_FILE_LRU
+	bool "Enable HyperHold FILE LRU"
+	depends on HYPERHOLD && MEMCG
+	select HYPERHOLD_MEMCG
+	default n
+	help
+	  File-LRU is a mechanism that put file page in global lru list,
+	  and anon page in memcg lru list(if MEMCG is enable), what's
+	  more, recliam of anonymous pages and file page are separated.
+
+config HYPERHOLD_MEMCG
+	bool "Enable Memcg Management in HyperHold"
+	depends on HYPERHOLD && MEMCG
+	help
+	  Add more attributes in memory cgroup, these attribute is used
+	  to show information, shrink memory, swapin page and so on.
+
+config HYPERHOLD_ZSWAPD
+	bool "Enable zswapd thread to reclaim anon pages in background"
+	depends on HYPERHOLD && ZRAM
+	default n
+	help
+	  zswapd is a kernel thread that reclaim anonymous pages in the
+	  background. When the use of swap pages reaches the watermark
+	  and the refault of anonymous pages is high, the content of
+	  zram will exchanged to eswap by a certain percentage.
+
 config SPARSEMEM
 	def_bool y
 	depends on (!SELECT_MEMORY_MODEL && ARCH_SPARSEMEM_ENABLE) || SPARSEMEM_MANUAL
