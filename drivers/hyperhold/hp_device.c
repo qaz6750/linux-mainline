@@ -9,6 +9,8 @@
 
 #include <linux/random.h>
 #include <linux/blk-crypto.h>
+#include <linux/scatterlist.h>
+#include <linux/version.h>
 
 #include "hp_device.h"
 
@@ -36,7 +38,7 @@ void unbind_bdev(struct hp_device *dev)
 				dev->old_block_size, ret);
 	dev->old_block_size = 0;
 put:
-	blkdev_put(dev->bdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL);
+	blkdev_put(dev->bdev, FMODE_READ | FMODE_WRITE);
 	dev->bdev = NULL;
 close:
 	if (dev->filp)
@@ -62,7 +64,11 @@ bool bind_bdev(struct hp_device *dev, const char *name)
 		pr_err("%s is not a block device!\n", name);
 		goto err;
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	dev->bdev = blkdev_get_by_dev(inode->i_rdev, BLK_OPEN_READ | BLK_OPEN_WRITE, dev, NULL);
+#else
 	dev->bdev = blkdev_get_by_dev(inode->i_rdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL, dev);
+#endif
 	if (IS_ERR(dev->bdev)) {
 		ret = PTR_ERR(dev->bdev);
 		dev->bdev = NULL;

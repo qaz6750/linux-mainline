@@ -1361,12 +1361,18 @@ static void __meminit pgdat_init_internals(struct pglist_data *pgdat)
 
 	init_waitqueue_head(&pgdat->kswapd_wait);
 	init_waitqueue_head(&pgdat->pfmemalloc_wait);
+#ifdef CONFIG_HYPERHOLD_ZSWAPD
+	init_waitqueue_head(&pgdat->zswapd_wait);
+#endif
 
 	for (i = 0; i < NR_VMSCAN_THROTTLE; i++)
 		init_waitqueue_head(&pgdat->reclaim_wait[i]);
 
 	pgdat_page_ext_init(pgdat);
 	lruvec_init(&pgdat->__lruvec);
+#if defined(CONFIG_HYPERHOLD_FILE_LRU) && defined(CONFIG_MEMCG)
+	pgdat->__lruvec.pgdat = pgdat;
+#endif
 }
 
 static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx, int nid,
