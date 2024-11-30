@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+config HYPERHOLD
+	bool "Hyperhold driver"
+	select HYPERHOLD_ZSWAPD
+	select HYPERHOLD_MEMCG
+	default n
+	help
+	  Hyperhold driver.
+
+config HYPERHOLD_DEBUG
+	bool "Debug info for Hyperhold driver"
+	depends on HYPERHOLD
+	help
+	  Debug info for Hyperhold driver.
