@@ -138,3 +138,7 @@ obj-$(CONFIG_IO_MAPPING) += io-mapping.o
 obj-$(CONFIG_HAVE_BOOTMEM_INFO_NODE) += bootmem_info.o
 obj-$(CONFIG_GENERIC_IOREMAP) += ioremap.o
 obj-$(CONFIG_SHRINKER_DEBUG) += shrinker_debug.o
+obj-$(CONFIG_HYPERHOLD_FILE_LRU) += memcg_reclaim.o
+obj-$(CONFIG_HYPERHOLD_MEMCG) += memcg_control.o
+obj-$(CONFIG_HYPERHOLD_ZSWAPD) += zswapd.o zswapd_control.o
+obj-$(CONFIG_MEMORY_MONITOR) += memory_monitor.o

@@ -10,6 +10,7 @@
 #include <linux/module.h>
 #include <linux/blkdev.h>
 #include <linux/sysctl.h>
+#include <linux/version.h>
 
 #include "hyperhold.h"
 #include "hp_device.h"
@@ -230,6 +231,40 @@ unlock:
 }
 
 static struct ctl_table_header *hp_sysctl_header;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+static struct ctl_table hp_sys_table[] = {
+	{
+		.procname = "enable",
+		.mode = 0666,
+		.proc_handler = enable_sysctl_handler,
+	},
+	{
+		.procname = "device",
+		.data = &hyperhold.device_name,
+		.maxlen = sizeof(hyperhold.device_name),
+		.mode = 0644,
+		.proc_handler = device_sysctl_handler,
+	},
+	{
+		.procname = "extent_size",
+		.data = &hyperhold.extent_size,
+		.maxlen = sizeof(hyperhold.extent_size),
+		.mode = 0644,
+		.proc_handler = extent_sysctl_handler,
+	},
+	{
+		.procname = "soft_crypt",
+		.data = &hyperhold.enable_soft_crypt,
+		.maxlen = sizeof(hyperhold.enable_soft_crypt),
+		.mode = 0644,
+		.proc_handler = crypto_sysctl_handler,
+		.extra1 = SYSCTL_ZERO,
+		.extra2 = SYSCTL_ONE,
+	},
+	{}
+};
+#else
 static struct ctl_table hp_table[] = {
 	{
 		.procname = "enable",
@@ -277,6 +312,7 @@ static struct ctl_table hp_sys_table[] = {
 	},
 	{}
 };
+#endif
 
 bool is_hyperhold_enable(void)
 {
@@ -289,7 +325,11 @@ static int __init hyperhold_init(void)
 	hyperhold.extent_size = HP_DFLT_EXT_SIZE;
 	hyperhold.enable_soft_crypt = 1;
 	mutex_init(&hyperhold.init_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	hp_sysctl_header = register_sysctl("kernel/hyperhold", hp_sys_table);
+#else
 	hp_sysctl_header = register_sysctl_table(hp_sys_table);
+#endif
 	if (!hp_sysctl_header) {
 		pr_err("register hyperhold sysctl table failed!\n");
 		return -EINVAL;
@@ -707,15 +747,25 @@ static int hpio_submit(struct hpio *hpio)
 	sector_t sec;
 	int i;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	dev = device_of(hpio->eid);
+	bio = bio_alloc(dev->bdev, BIO_MAX_VECS,
+				 hpio->op, GFP_NOIO);
+#else
 	bio = bio_alloc(GFP_NOIO, BIO_MAX_PAGES);
+#endif
 	if (!bio) {
 		pr_err("bio alloc failed!\n");
 		return -ENOMEM;
 	}
 	atomic64_add(sizeof(struct bio), &mem_used);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	bio->bi_opf = hpio->op;
+#else
 	dev = device_of(hpio->eid);
 	bio_set_op_attrs(bio, hpio->op, 0);
+#endif
 	bio_set_dev(bio, dev->bdev);
 
 	ext_size = space_of(hpio->eid)->ext_size;

@@ -320,6 +320,12 @@ void lru_note_cost(struct lruvec *lruvec, bool file,
 
 void lru_note_cost_refault(struct folio *folio)
 {
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	if (page_is_file_lru(folio_page(folio, 0))) {
+		lru_note_cost(&(folio_pgdat(folio)->__lruvec), 1, folio_nr_pages(folio), 0);
+		return;
+	}
+#endif
 	lru_note_cost(folio_lruvec(folio), folio_is_file_lru(folio),
 		      folio_nr_pages(folio), 0);
 }

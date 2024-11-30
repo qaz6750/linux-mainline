@@ -59,6 +59,10 @@ static inline gid_t __kgid_val(kgid_t gid)
 #define NWEBSPAWN_UID KUIDT_INIT(3081)
 #endif
 
+#ifdef CONFIG_HYPERHOLD
+#define GLOBAL_MEMMGR_UID KUIDT_INIT(1111)
+#endif
+
 #define INVALID_UID KUIDT_INIT(-1)
 #define INVALID_GID KGIDT_INIT(-1)
 
