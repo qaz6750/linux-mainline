@@ -398,7 +398,16 @@ void *workingset_eviction(struct folio *folio, struct mem_cgroup *target_memcg)
 	memcgid = mem_cgroup_id(lruvec_memcg(lruvec));
 	eviction = atomic_long_read(&lruvec->nonresident_age);
 	eviction >>= bucket_order;
-	workingset_age_nonresident(lruvec, folio_nr_pages(folio));
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	if (!is_prot_page(folio_page(folio, 0)) && page_is_file_lru(folio_page(folio, 0))) {
+		lruvec = folio_lruvec(folio);
+		workingset_age_nonresident(lruvec, folio_nr_pages(folio));
+	} else {
+		workingset_age_nonresident(lruvec, folio_nr_pages(folio));
+	}
+#else
+ 	workingset_age_nonresident(lruvec, folio_nr_pages(folio));
+#endif
 	return pack_shadow(memcgid, pgdat, eviction,
 				folio_test_workingset(folio));
 }
@@ -447,9 +456,17 @@ bool workingset_test_recent(void *shadow, bool file, bool *workingset)
 	 * would be better if the root_mem_cgroup existed in all
 	 * configurations instead.
 	 */
-	eviction_memcg = mem_cgroup_from_id(memcgid);
-	if (!mem_cgroup_disabled() && !eviction_memcg)
-		return false;
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	if (memcgid != -1) {
+		eviction_memcg = mem_cgroup_from_id(memcgid);
+		if (!mem_cgroup_disabled() && !eviction_memcg)
+			return false;
+	}
+#else
+ 	eviction_memcg = mem_cgroup_from_id(memcgid);
+ 	if (!mem_cgroup_disabled() && !eviction_memcg)
+ 		return false;
+#endif
 
 	eviction_lruvec = mem_cgroup_lruvec(eviction_memcg, pgdat);
 	refault = atomic_long_read(&eviction_lruvec->nonresident_age);
@@ -479,10 +496,21 @@ bool workingset_test_recent(void *shadow, bool file, bool *workingset)
 	 * workingset competition needs to consider anon or not depends
 	 * on having free swap space.
 	 */
-	workingset_size = lruvec_page_state(eviction_lruvec, NR_ACTIVE_FILE);
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	workingset_size = lruvec_page_state(node_lruvec(pgdat), NR_ACTIVE_FILE);
+#else
+ 	workingset_size = lruvec_page_state(eviction_lruvec, NR_ACTIVE_FILE);
+#endif
+
 	if (!file) {
-		workingset_size += lruvec_page_state(eviction_lruvec,
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+		workingset_size += lruvec_page_state(node_lruvec(pgdat),
 						     NR_INACTIVE_FILE);
+#else
+
+ 		workingset_size += lruvec_page_state(eviction_lruvec,
+ 						     NR_INACTIVE_FILE);
+#endif
 	}
 	if (mem_cgroup_get_nr_swap_pages(eviction_memcg) > 0) {
 		workingset_size += lruvec_page_state(eviction_lruvec,
@@ -537,14 +565,33 @@ void workingset_refault(struct folio *folio, void *shadow)
 	pgdat = folio_pgdat(folio);
 	lruvec = mem_cgroup_lruvec(memcg, pgdat);
 
-	mod_lruvec_state(lruvec, WORKINGSET_REFAULT_BASE + file, nr);
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	if (!is_prot_page(folio_page(folio, 0)) && file)
+		mod_lruvec_state(node_lruvec(pgdat), 
+			WORKINGSET_REFAULT_BASE + file, folio_nr_pages(folio));
+	else
+		mod_lruvec_state(lruvec, WORKINGSET_REFAULT_BASE + file, nr);
+#else
+ 	mod_lruvec_state(lruvec, WORKINGSET_REFAULT_BASE + file, nr);
+#endif
 
 	if (!workingset_test_recent(shadow, file, &workingset))
 		goto out;
 
 	folio_set_active(folio);
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+       if (!is_prot_page(folio_page(folio, 0)) && file) {
+               workingset_age_nonresident(node_lruvec(pgdat),
+                                          folio_nr_pages(folio));
+               mod_lruvec_state(lruvec, WORKINGSET_ACTIVATE_BASE + file, folio_nr_pages(folio));
+       } else {
+               workingset_age_nonresident(lruvec, nr);
+               mod_lruvec_state(lruvec, WORKINGSET_ACTIVATE_BASE + file, nr);
+       }
+#else
 	workingset_age_nonresident(lruvec, nr);
 	mod_lruvec_state(lruvec, WORKINGSET_ACTIVATE_BASE + file, nr);
+#endif
 
 	/* Folio was active prior to eviction */
 	if (workingset) {
@@ -554,7 +601,14 @@ void workingset_refault(struct folio *folio, void *shadow)
 		 * putback
 		 */
 		lru_note_cost_refault(folio);
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+		if (!is_prot_page(folio_page(folio, 0)) && file)
+			mod_lruvec_state(node_lruvec(pgdat), WORKINGSET_RESTORE_BASE + file, folio_nr_pages(folio));
+		else
+			mod_lruvec_state(lruvec, WORKINGSET_RESTORE_BASE + file, nr);
+#else
 		mod_lruvec_state(lruvec, WORKINGSET_RESTORE_BASE + file, nr);
+#endif
 	}
 out:
 	rcu_read_unlock();
@@ -567,6 +621,7 @@ out:
 void workingset_activation(struct folio *folio)
 {
 	struct mem_cgroup *memcg;
+	struct lruvec *lruvec;
 
 	rcu_read_lock();
 	/*
@@ -579,7 +634,16 @@ void workingset_activation(struct folio *folio)
 	memcg = folio_memcg_rcu(folio);
 	if (!mem_cgroup_disabled() && !memcg)
 		goto out;
-	workingset_age_nonresident(folio_lruvec(folio), folio_nr_pages(folio));
+#ifdef CONFIG_HYPERHOLD_FILE_LRU
+	if (!is_prot_page(folio_page(folio, 0)) && page_is_file_lru(folio_page(folio, 0))) {
+		lruvec = folio_lruvec(folio);
+		workingset_age_nonresident(lruvec, folio_nr_pages(folio));
+	} else {
+		workingset_age_nonresident(folio_lruvec(folio), folio_nr_pages(folio));
+	}
+#else
+ 	workingset_age_nonresident(folio_lruvec(folio), folio_nr_pages(folio));
+#endif
 out:
 	rcu_read_unlock();
 }
@@ -660,6 +724,7 @@ static unsigned long count_shadow_nodes(struct shrinker *shrinker,
 	 * PAGE_SIZE / xa_nodes / node_entries * 8 / PAGE_SIZE
 	 */
 #ifdef CONFIG_MEMCG
+#ifndef CONFIG_HYPERHOLD_FILE_LRU
 	if (sc->memcg) {
 		struct lruvec *lruvec;
 		int i;
@@ -674,6 +739,7 @@ static unsigned long count_shadow_nodes(struct shrinker *shrinker,
 		pages += lruvec_page_state_local(
 			lruvec, NR_SLAB_UNRECLAIMABLE_B) >> PAGE_SHIFT;
 	} else
+#endif
 #endif
 		pages = node_present_pages(sc->nid);
 

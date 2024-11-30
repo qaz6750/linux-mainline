@@ -12,6 +12,8 @@
 
 #define BIO_MAX_VECS		256U
 
+#define BIO_MAX_PAGES		256
+
 struct queue_limits;
 
 static inline unsigned int bio_max_segs(unsigned int nr_segs)
