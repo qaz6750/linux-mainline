@@ -3297,6 +3297,15 @@ static int proc_stack_depth(struct seq_file *m, struct pid_namespace *ns,
 }
 #endif /* CONFIG_STACKLEAK_METRICS */
 
+#ifdef CONFIG_ACCESS_TOKENID
+static int proc_token_operations(struct seq_file *m, struct pid_namespace *ns,
+				 struct pid *pid, struct task_struct *task)
+{
+	seq_printf(m, "%#llx %#llx\n", task->token, task->ftoken);
+	return 0;
+}
+#endif /* CONFIG_ACCESS_TOKENID */
+
 /*
  * Thread groups
  */
@@ -3409,6 +3418,9 @@ static const struct pid_entry tgid_base_stuff[] = {
 #endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
+#endif
+#ifdef CONFIG_ACCESS_TOKENID
+	ONE("tokenid", S_IRUSR, proc_token_operations),
 #endif
 #ifdef CONFIG_SECCOMP_CACHE_DEBUG
 	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
@@ -3748,6 +3760,9 @@ static const struct pid_entry tid_base_stuff[] = {
 #endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
+#endif
+#ifdef CONFIG_ACCESS_TOKENID
+	ONE("tokenid", S_IRUSR, proc_token_operations),
 #endif
 #ifdef CONFIG_SECCOMP_CACHE_DEBUG
 	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
