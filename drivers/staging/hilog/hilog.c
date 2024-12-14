@@ -294,7 +294,7 @@ static void hilog_cover_old_log(size_t buf_len)
 	}
 }
 
-int hilog_write_internal(const char __user *buffer, size_t buf_len)
+static int hilog_write_internal(const char __user *buffer, size_t buf_len)
 {
 	struct hilog_entry header;
 	int retval;

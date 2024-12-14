@@ -26,7 +26,7 @@ static struct kmem_cache *g_cache = NULL;
 static struct token_perm_node *g_token_perm_root = NULL;
 static size_t g_total_node_num = 0;
 
-int access_tokenid_get_tokenid(struct file *file, void __user *uarg)
+static int access_tokenid_get_tokenid(struct file *file, void __user *uarg)
 {
 	return copy_to_user(uarg, &current->token,
 			    sizeof(current->token)) ? -EFAULT : 0;
@@ -53,7 +53,7 @@ static bool check_permission_for_set_tokenid(struct file *file, unsigned long lo
 	return false;
 }
 
-int access_tokenid_set_tokenid(struct file *file, void __user *uarg)
+static int access_tokenid_set_tokenid(struct file *file, void __user *uarg)
 {
 	unsigned long long tmp = 0;
 
@@ -96,7 +96,7 @@ static bool check_permission_for_ftokenid(struct file *file)
 	return false;
 }
 
-int access_tokenid_get_ftokenid(struct file *file, void __user *uarg)
+static int access_tokenid_get_ftokenid(struct file *file, void __user *uarg)
 {
 	if (!check_permission_for_ftokenid(file))
 		return -EPERM;
@@ -105,7 +105,7 @@ int access_tokenid_get_ftokenid(struct file *file, void __user *uarg)
 			    sizeof(current->ftoken)) ? -EFAULT : 0;
 }
 
-int access_tokenid_set_ftokenid(struct file *file, void __user *uarg)
+static int access_tokenid_set_ftokenid(struct file *file, void __user *uarg)
 {
 	unsigned long long tmp = 0;
 
@@ -212,7 +212,7 @@ static struct token_perm_node *remove_node_by_token(struct token_perm_node *root
 	return target_node;
 }
 
-int access_tokenid_add_permission(struct file *file, void __user *uarg)
+static int access_tokenid_add_permission(struct file *file, void __user *uarg)
 {
 	if (!check_permission_for_set_token_permission())
 		return -EPERM;
@@ -235,7 +235,7 @@ int access_tokenid_add_permission(struct file *file, void __user *uarg)
 	return 0;
 }
 
-int access_tokenid_remove_permission(struct file *file, void __user *uarg)
+static int access_tokenid_remove_permission(struct file *file, void __user *uarg)
 {
 	if (!check_permission_for_set_token_permission())
 		return -EPERM;
@@ -254,7 +254,7 @@ int access_tokenid_remove_permission(struct file *file, void __user *uarg)
 	return 0;
 }
 
-int access_tokenid_set_permission(struct file *file, void __user *uarg)
+static int access_tokenid_set_permission(struct file *file, void __user *uarg)
 {
 	if (!check_permission_for_set_token_permission())
 		return -EPERM;
@@ -288,7 +288,7 @@ int access_tokenid_set_permission(struct file *file, void __user *uarg)
 	return 0;
 }
 
-int access_tokenid_get_permission(struct file *file, void __user *uarg)
+static int access_tokenid_get_permission(struct file *file, void __user *uarg)
 {
 	ioctl_set_get_perm_data get_perm_data;
 	if (copy_from_user(&get_perm_data, uarg, sizeof(get_perm_data)))

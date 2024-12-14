@@ -1063,7 +1063,7 @@ static int qcom_fg_clear_ima(struct qcom_fg_chip *chip,
 	return 0;
 }
 
-irqreturn_t qcom_fg_handle_soc_delta(int irq, void *data)
+static irqreturn_t qcom_fg_handle_soc_delta(int irq, void *data)
 {
 	struct qcom_fg_chip *chip = data;
 
@@ -1074,7 +1074,7 @@ irqreturn_t qcom_fg_handle_soc_delta(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-irqreturn_t qcom_fg_handle_mem_avail(int irq, void *data)
+static irqreturn_t qcom_fg_handle_mem_avail(int irq, void *data)
 {
 	struct qcom_fg_chip *chip = data;
 
