@@ -64,4 +64,16 @@ source "drivers/staging/fieldbus/Kconfig"
 
 source "drivers/staging/vme_user/Kconfig"
 
+source "drivers/staging/hilog/Kconfig"
+
+source "drivers/staging/hievent/Kconfig"
+
+source "drivers/staging/hisysevent/Kconfig"
+
+source "drivers/staging/zerohung/Kconfig"
+
+source "drivers/staging/hungtask/Kconfig"
+
+source "drivers/staging/blackbox/Kconfig"
+
 endif # STAGING
