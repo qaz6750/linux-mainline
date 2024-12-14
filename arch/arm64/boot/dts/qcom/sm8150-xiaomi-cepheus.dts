@@ -878,14 +878,17 @@
 };
 
 &usb_1 {
+	/* USB 2.0 only */
+	qcom,select-utmi-as-pipe-clk;
 	status = "okay";
 };
 
 &usb_1_dwc3 {
-	snps,has-lpm-erratum;
-	snps,hird-threshold = /bits/ 8 <0x10>;
+	dr_mode = "peripheral";
 	maximum-speed = "high-speed";
-	dr_mode = "host";
+	/* Remove USB3 phy */
+	phys = <&usb_1_hsphy>;
+	phy-names = "usb2-phy";
 };
 
 &usb_1_hsphy {
@@ -893,12 +896,6 @@
 	vdda-pll-supply = <&vreg_l5a_0p875>;
 	vdda18-supply = <&vreg_l12a_1p8>;
 	vdda33-supply = <&vreg_l2a_3p1>;
-};
-
-&usb_1_qmpphy {
-	status = "okay";
-	vdda-phy-supply = <&vreg_l3c_1p2>;
-	vdda-pll-supply = <&vreg_l5a_0p875>;
 };
 
 &wifi {
