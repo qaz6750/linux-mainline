@@ -1019,38 +1019,24 @@
 
 &ufs_mem_hc {
 	status = "okay";
-
-	//reset-gpios = <&tlmm 178 GPIO_ACTIVE_LOW>;
-
-	//vcc-supply = <&vreg_l10a_2p5>;
-	//vccq-supply = <&vreg_l9a_1p2>;
-	//vccq2-supply = <&vreg_s4a_1p8>;
-	//vcc-max-microamp = <750000>;
-	//vccq-max-microamp = <700000>;
-	//vccq2-max-microamp = <750000>;
 };
 
 &ufs_mem_phy {
 	status = "okay";
-
-	//vdda-phy-supply = <&vdda_ufs_2ln_core_1>;
-	//vdda-pll-supply = <&vreg_l3c_1p2>;
-	//vddp-ref-clk-supply = <&vreg_l9a_1p2>;
-	//vdda-phy-max-microamp = <90200>;
-	//vdda-pll-max-microamp = <19000>;
-	//vddp-ref-clk-max-microamp = <100>;
-	//vddp-ref-clk-always-on;
 };
 
 &usb_1 {
+	/* USB 2.0 only */
+	qcom,select-utmi-as-pipe-clk;
 	status = "okay";
 };
 
 &usb_1_dwc3 {
-	snps,has-lpm-erratum;
-	snps,hird-threshold = /bits/ 8 <0x10>;
+	dr_mode = "peripheral";
 	maximum-speed = "high-speed";
-	dr_mode = "host";
+	/* Remove USB3 phy */
+	phys = <&usb_1_hsphy>;
+	phy-names = "usb2-phy";
 };
 
 &usb_1_hsphy {
