@@ -562,7 +562,7 @@
 
 	zap-shader {
 		memory-region = <&gpu_mem>;
-		firmware-name = "qcom/sm8150/Xiaomi/raphael/a640_zap.mbn";
+		firmware-name = "qcom/sm8150/xiaomi/raphael/a640_zap.mbn";
 	};
 };
 
@@ -1044,12 +1044,6 @@
 	vdda-pll-supply = <&vreg_l5a_0p875>;
 	vdda18-supply = <&vreg_l12a_1p8>;
 	vdda33-supply = <&vreg_l2a_3p1>;
-};
-
-&usb_1_qmpphy {
-	status = "okay";
-	vdda-phy-supply = <&vreg_l3c_1p2>;
-	vdda-pll-supply = <&vreg_l5a_0p875>;
 };
 
 &wcd9340 {
