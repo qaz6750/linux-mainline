@@ -34,6 +34,10 @@
 #include <linux/cpuhotplug.h>
 #include <linux/part_stat.h>
 
+#ifdef CONFIG_ZRAM_GROUP
+#include <linux/memcontrol.h>
+#endif
+
 #include "zram_drv.h"
 
 static DEFINE_IDR(zram_index_idr);
@@ -57,21 +61,6 @@ static void zram_free_page(struct zram *zram, size_t index);
 static int zram_read_page(struct zram *zram, struct page *page, u32 index,
 			  struct bio *parent);
 
-static int zram_slot_trylock(struct zram *zram, u32 index)
-{
-	return bit_spin_trylock(ZRAM_LOCK, &zram->table[index].flags);
-}
-
-static void zram_slot_lock(struct zram *zram, u32 index)
-{
-	bit_spin_lock(ZRAM_LOCK, &zram->table[index].flags);
-}
-
-static void zram_slot_unlock(struct zram *zram, u32 index)
-{
-	bit_spin_unlock(ZRAM_LOCK, &zram->table[index].flags);
-}
-
 static inline bool init_done(struct zram *zram)
 {
 	return zram->disksize;
@@ -80,35 +69,6 @@ static inline bool init_done(struct zram *zram)
 static inline struct zram *dev_to_zram(struct device *dev)
 {
 	return (struct zram *)dev_to_disk(dev)->private_data;
-}
-
-static unsigned long zram_get_handle(struct zram *zram, u32 index)
-{
-	return zram->table[index].handle;
-}
-
-static void zram_set_handle(struct zram *zram, u32 index, unsigned long handle)
-{
-	zram->table[index].handle = handle;
-}
-
-/* flag operations require table entry bit_spin_lock() being held */
-static bool zram_test_flag(struct zram *zram, u32 index,
-			enum zram_pageflags flag)
-{
-	return zram->table[index].flags & BIT(flag);
-}
-
-static void zram_set_flag(struct zram *zram, u32 index,
-			enum zram_pageflags flag)
-{
-	zram->table[index].flags |= BIT(flag);
-}
-
-static void zram_clear_flag(struct zram *zram, u32 index,
-			enum zram_pageflags flag)
-{
-	zram->table[index].flags &= ~BIT(flag);
 }
 
 static inline void zram_set_element(struct zram *zram, u32 index,
@@ -120,19 +80,6 @@ static inline void zram_set_element(struct zram *zram, u32 index,
 static unsigned long zram_get_element(struct zram *zram, u32 index)
 {
 	return zram->table[index].element;
-}
-
-static size_t zram_get_obj_size(struct zram *zram, u32 index)
-{
-	return zram->table[index].flags & (BIT(ZRAM_FLAG_SHIFT) - 1);
-}
-
-static void zram_set_obj_size(struct zram *zram,
-					u32 index, size_t size)
-{
-	unsigned long flags = zram->table[index].flags >> ZRAM_FLAG_SHIFT;
-
-	zram->table[index].flags = (flags << ZRAM_FLAG_SHIFT) | size;
 }
 
 static inline bool zram_allocated(struct zram *zram, u32 index)
@@ -616,9 +563,6 @@ static void read_from_bdev_async(struct zram *zram, struct page *page,
 	submit_bio(bio);
 }
 
-#define PAGE_WB_SIG "page_index="
-
-#define PAGE_WRITEBACK			0
 #define HUGE_WRITEBACK			(1<<0)
 #define IDLE_WRITEBACK			(1<<1)
 #define INCOMPRESSIBLE_WRITEBACK	(1<<2)
@@ -644,17 +588,8 @@ static ssize_t writeback_store(struct device *dev,
 		mode = IDLE_WRITEBACK | HUGE_WRITEBACK;
 	else if (sysfs_streq(buf, "incompressible"))
 		mode = INCOMPRESSIBLE_WRITEBACK;
-	else {
-		if (strncmp(buf, PAGE_WB_SIG, sizeof(PAGE_WB_SIG) - 1))
-			return -EINVAL;
-
-		if (kstrtol(buf + sizeof(PAGE_WB_SIG) - 1, 10, &index) ||
-				index >= nr_pages)
-			return -EINVAL;
-
-		nr_pages = 1;
-		mode = PAGE_WRITEBACK;
-	}
+	else
+		return -EINVAL;
 
 	down_read(&zram->init_lock);
 	if (!init_done(zram)) {
@@ -673,7 +608,7 @@ static ssize_t writeback_store(struct device *dev,
 		goto release_init_lock;
 	}
 
-	for (; nr_pages != 0; index++, nr_pages--) {
+	for (index = 0; index < nr_pages; index++) {
 		spin_lock(&zram->wb_limit_lock);
 		if (zram->wb_limit_enable && !zram->bd_wb_limit) {
 			spin_unlock(&zram->wb_limit_lock);
@@ -1233,6 +1168,66 @@ static DEVICE_ATTR_RO(bd_stat);
 #endif
 static DEVICE_ATTR_RO(debug_stat);
 
+#ifdef CONFIG_ZRAM_GROUP
+static ssize_t group_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct zram *zram = dev_to_zram(dev);
+	int ret = 0;
+
+	down_read(&zram->init_lock);
+	if (zram->zgrp_ctrl == ZGRP_NONE)
+		ret = snprintf(buf, PAGE_SIZE - 1, "disable\n");
+	else if (zram->zgrp_ctrl == ZGRP_TRACK)
+		ret = snprintf(buf, PAGE_SIZE - 1, "readonly\n");
+#ifdef CONFIG_ZRAM_GROUP_WRITEBACK
+	else if (zram->zgrp_ctrl == ZGRP_WRITE)
+		ret = snprintf(buf, PAGE_SIZE - 1, "readwrite\n");
+#endif
+	up_read(&zram->init_lock);
+
+	return ret;
+}
+
+static ssize_t group_store(struct device *dev, struct device_attribute *attr,
+				const char *buf, size_t len)
+{
+	struct zram *zram = dev_to_zram(dev);
+	int ret;
+#ifdef CONFIG_ZRAM_GROUP_DEBUG
+	u32 op, gid, index;
+
+	ret = sscanf(buf, "%u %u %u", &op, &index, &gid);
+	if (ret == 3) {
+		pr_info("op[%u] index[%u] gid[%u].\n", op, index, gid);
+		group_debug(zram, op, index, gid);
+		return len;
+	}
+#endif
+
+	ret = len;
+	down_write(&zram->init_lock);
+	if (init_done(zram)) {
+		pr_info("Can't setup group ctrl for initialized device!\n");
+		ret = -EBUSY;
+		goto out;
+	}
+	if (!strcmp(buf, "disable\n"))
+		zram->zgrp_ctrl = ZGRP_NONE;
+	else if (!strcmp(buf, "readonly\n"))
+		zram->zgrp_ctrl = ZGRP_TRACK;
+#ifdef CONFIG_ZRAM_GROUP_WRITEBACK
+	else if (!strcmp(buf, "readwrite\n"))
+		zram->zgrp_ctrl = ZGRP_WRITE;
+#endif
+	else
+		ret = -EINVAL;
+out:
+	up_write(&zram->init_lock);
+
+	return ret;
+}
+#endif
+
 static void zram_meta_free(struct zram *zram, u64 disksize)
 {
 	size_t num_pages = disksize >> PAGE_SHIFT;
@@ -1248,6 +1243,9 @@ static void zram_meta_free(struct zram *zram, u64 disksize)
 	zs_destroy_pool(zram->mem_pool);
 	vfree(zram->table);
 	zram->table = NULL;
+#ifdef CONFIG_ZRAM_GROUP
+	zram_group_deinit(zram);
+#endif
 }
 
 static bool zram_meta_alloc(struct zram *zram, u64 disksize)
@@ -1267,6 +1265,9 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
 
 	if (!huge_class_size)
 		huge_class_size = zs_huge_class_size(zram->mem_pool);
+#ifdef CONFIG_ZRAM_GROUP
+		zram_group_init(zram, num_pages);
+#endif
 	return true;
 }
 
@@ -1278,6 +1279,10 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
 static void zram_free_page(struct zram *zram, size_t index)
 {
 	unsigned long handle;
+
+#ifdef CONFIG_ZRAM_GROUP
+	zram_group_untrack_obj(zram, index);
+#endif
 
 #ifdef CONFIG_ZRAM_TRACK_ENTRY_ACTIME
 	zram->table[index].ac_time = 0;
@@ -1382,6 +1387,20 @@ static int zram_read_page(struct zram *zram, struct page *page, u32 index,
 	int ret;
 
 	zram_slot_lock(zram, index);
+#ifdef CONFIG_ZRAM_GROUP_WRITEBACK
+	if (!parent) {
+		ret = zram_group_fault_obj(zram, index);
+		if (ret) {
+			zram_slot_unlock(zram, index);
+			return ret;
+		}
+	}
+
+	if (zram_test_flag(zram, index, ZRAM_GWB)) {
+		zram_slot_unlock(zram, index);
+		return -EIO;
+	}
+#endif
 	if (!zram_test_flag(zram, index, ZRAM_WB)) {
 		/* Slot should be locked through out the function call */
 		ret = zram_read_from_zspool(zram, page, index);
@@ -1549,6 +1568,10 @@ out:
 		zram_set_handle(zram, index, handle);
 		zram_set_obj_size(zram, index, comp_len);
 	}
+#ifdef CONFIG_ZRAM_GROUP
+	zram_group_track_obj(zram, index, page_memcg(page));
+#endif
+
 	zram_slot_unlock(zram, index);
 
 	/* Update stats */
@@ -2174,6 +2197,9 @@ static DEVICE_ATTR_RW(writeback_limit_enable);
 static DEVICE_ATTR_RW(recomp_algorithm);
 static DEVICE_ATTR_WO(recompress);
 #endif
+#ifdef CONFIG_ZRAM_GROUP
+static DEVICE_ATTR_RW(group);
+#endif
 
 static struct attribute *zram_disk_attrs[] = {
 	&dev_attr_disksize.attr,
@@ -2200,6 +2226,9 @@ static struct attribute *zram_disk_attrs[] = {
 #ifdef CONFIG_ZRAM_MULTI_COMP
 	&dev_attr_recomp_algorithm.attr,
 	&dev_attr_recompress.attr,
+#endif
+#ifdef CONFIG_ZRAM_GROUP
+	&dev_attr_group.attr,
 #endif
 	NULL,
 };

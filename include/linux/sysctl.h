@@ -231,6 +231,7 @@ struct ctl_table_header *__register_sysctl_table(
 	const char *path, struct ctl_table *table, size_t table_size);
 struct ctl_table_header *register_sysctl_sz(const char *path, struct ctl_table *table,
 					    size_t table_size);
+struct ctl_table_header *register_sysctl_table(struct ctl_table * table);
 void unregister_sysctl_table(struct ctl_table_header * table);
 
 extern int sysctl_init_bases(void);
