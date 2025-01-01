@@ -26,17 +26,6 @@
 #define HMDFS_HASH_COL_BIT ((0x1ULL) << 63)
 #define DELTA		   0x9E3779B9
 
-static bool is_dot_dotdot(const unsigned char *name, __u32 len)
-{
-	if (len == 1 && name[0] == '.')
-		return true;
-
-	if (len == 2 && name[0] == '.' && name[1] == '.')
-		return true;
-
-	return false;
-}
-
 static void str2hashbuf(const unsigned char *msg, size_t len, unsigned int *buf,
 			int num, bool case_sense)
 {

@@ -925,7 +925,7 @@ static int hmdfs_getattr_local(struct mnt_idmap *idmap, const struct path *path,
 		return -ENOENT;
 	}
 	hmdfs_get_lower_path(path->dentry, &lower_path);
-	ret = vfs_getattr(&lower_path, stat, request_mask, flags);
+	ret = vfs_getattr_nosec(&lower_path, stat, request_mask, flags);
 	stat->ino = d_inode(path->dentry)->i_ino;
 	stat->uid = d_inode(path->dentry)->i_uid;
 	stat->gid = d_inode(path->dentry)->i_gid;

@@ -785,7 +785,7 @@ int hmdfs_getattr_merge(struct mnt_idmap *idmap, const struct path *path, struct
 		goto out;
 	}
 
-	ret = vfs_getattr(&lower_path, stat, request_mask, flags);
+	ret = vfs_getattr_nosec(&lower_path, stat, request_mask, flags);
 out:
 	dput(lower_path.dentry);
 	return ret;
